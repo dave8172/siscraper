@@ -1,0 +1,22 @@
+{
+  "html": [
+    "cookie (policy|settings|preferences|consent|notice|declaration)",
+    "we use cookies",
+    "accept (all|cookies)",
+    "manage cookies",
+    "this (website|site) uses",
+    "essential cookies",
+    "statistics cookies",
+    "marketing cookies",
+    "necessary cookies",
+    "privacy (policy|center)",
+    "strictly necessary",
+    "your consent",
+    "gdpr",
+    "skip to (main )?content",
+    "^(home|menu|search|login|sign ?up|toggle)$"
+  ],
+  "nav": [
+    "^\\s*(products?|features?|pricing|resources?|company|blog|docs)\\s*$"
+  ]
+}

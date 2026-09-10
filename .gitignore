@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.siscraper/
+
+# Local memory is per-deployment by definition: it is what THIS copy has
+# learned. Only the curated seed/ is shared.
+memory/
+!memory/.gitkeep

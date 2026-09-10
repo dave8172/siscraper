@@ -1,0 +1,80 @@
+{
+  "app.impact.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "forbidden",
+    "rung": "plain"
+  },
+  "buffer.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "forbidden",
+    "rung": "plain"
+  },
+  "clickup.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "forbidden",
+    "rung": "plain"
+  },
+  "dash.partnerstack.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "js-shell",
+    "rung": "plain"
+  },
+  "gridpane.com": {
+    "last_seen": "2026-09-10",
+    "reach": "ok",
+    "reason": "renders-terms-in-script",
+    "rung": "plain"
+  },
+  "kit.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "forbidden",
+    "rung": "plain"
+  },
+  "namecheap.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "cloudflare-interstitial",
+    "rung": "headless"
+  },
+  "namehero.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "forbidden",
+    "rung": "plain"
+  },
+  "porkbun.com": {
+    "last_seen": "2026-09-10",
+    "reach": "ok",
+    "reason": "renders-terms-in-script",
+    "rung": "plain"
+  },
+  "www.canva.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "forbidden",
+    "rung": "plain"
+  },
+  "www.constantcontact.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "forbidden",
+    "rung": "plain"
+  },
+  "www.gorgias.com": {
+    "last_seen": "2026-09-10",
+    "reach": "ok",
+    "reason": "js-shell",
+    "rung": "plain"
+  },
+  "www.namecheap.com": {
+    "last_seen": "2026-09-10",
+    "reach": "blocked",
+    "reason": "cloudflare-interstitial",
+    "rung": "headless"
+  }
+}

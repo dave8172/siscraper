@@ -1,0 +1,56 @@
+{
+  "affiliate-terms": {
+    "/affiliate": {
+      "tried": 0,
+      "won": 15
+    },
+    "/affiliate-program": {
+      "tried": 0,
+      "won": 22
+    },
+    "/affiliate-programme": {
+      "tried": 0,
+      "won": 0
+    },
+    "/affiliates": {
+      "tried": 0,
+      "won": 31
+    },
+    "/become-an-affiliate": {
+      "tried": 0,
+      "won": 0
+    },
+    "/partner-program": {
+      "tried": 0,
+      "won": 1
+    },
+    "/partner-programs": {
+      "tried": 0,
+      "won": 2
+    },
+    "/partners": {
+      "tried": 0,
+      "won": 27
+    },
+    "/partners/affiliate": {
+      "tried": 0,
+      "won": 0
+    },
+    "/partners/affiliates": {
+      "tried": 0,
+      "won": 0
+    },
+    "/refer": {
+      "tried": 0,
+      "won": 0
+    },
+    "/referral-program": {
+      "tried": 0,
+      "won": 1
+    },
+    "/referrals": {
+      "tried": 0,
+      "won": 0
+    }
+  }
+}
