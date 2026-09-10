@@ -114,6 +114,16 @@ with tempfile.TemporaryDirectory() as d:
           (s404.memory.known("strict.com").reach,
            s404.memory.known("strict.com").status), ("ok", "throttled"))
 
+    # A namespaced task key must not be read as a subdirectory.
+    ns = Session("main/sub", root=root)
+    f = ns.memory.log_run("main/sub", [Hit(host="h.com", path="/a", attempts=[
+        {"path": "/a", "status": 200, "diagnosis": "ok", "score": 9}])])
+    check("namespaced task logs to one file", f.parent.name, "runs")
+    check("the key itself is preserved in the rows",
+          json.loads(f.read_text())["task"], "main/sub")
+    check("and namespaces stay out of the main task's rates",
+          ns.memory.recompute_paths("main").get("main"), None)
+
 print("fetch diagnosis")
 r429 = Result(url="u", status=429, body="Just a moment...")
 check("429 outranks the interstitial it ships with", r429.diagnosis(), "rate-limited")

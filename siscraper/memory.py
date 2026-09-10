@@ -149,7 +149,11 @@ class Memory:
         """
         runs = self.local_dir / "runs"
         runs.mkdir(parents=True, exist_ok=True)
-        f = runs / f"{task}-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
+        # A task key may be namespaced ("affiliate-terms/escalated"), which is
+        # a legitimate way to keep a biased sub-run out of the main task's
+        # denominators. The key goes in the rows; only the filename needs
+        # flattening, and a slash there silently means "subdirectory".
+        f = runs / f"{_safe(task)}-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
         with open(f, "w", encoding="utf-8") as fh:
             for h in hits:
                 fh.write(json.dumps({
@@ -200,6 +204,11 @@ def _dump(path: Path, data) -> None:
     tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False,
                               sort_keys=True) + "\n", encoding="utf-8")
     os.replace(tmp, path)
+
+
+def _safe(name: str) -> str:
+    """A task key reduced to something that is only ever a filename."""
+    return "".join(c if c.isalnum() or c in "-_." else "-" for c in name)
 
 
 def _today() -> str:
