@@ -31,6 +31,22 @@ e3 = extract("30% off\n30% off\n30% off", [r"\d+ ?%"], max_lines=5)
 check("dedupe is not truncation", e3.truncated, False)
 check("dedupe still counted", (e3.matched, e3.total), (1, 3))
 check("score counts", score("affiliate affiliate commission", ["affiliate", "commission"]), 3)
+# The spec-table case: only the label matches, the answer is the next line.
+table = "Commission Structure\n50%\nCookie window\n90 days\nSupport\nEmail"
+check("without after, the answer is lost",
+      extract(table, ["cookie", "commission"]).lines,
+      ["Commission Structure", "Cookie window"])
+check("after=1 keeps the value",
+      extract(table, ["cookie", "commission"], after=1).lines,
+      ["Commission Structure", "50%", "Cookie window", "90 days"])
+check("after does not run past its window",
+      "Support" in extract(table, ["cookie", "commission"], after=1).lines, False)
+e_t = extract(table, ["cookie", "commission"], after=1)
+check("after does not inflate the match count", e_t.matched, 2)
+check("but the context lines are still counted as gathered", e_t.collected, 4)
+check("nothing was truncated", e_t.truncated, False)
+e_cap = extract(table, ["cookie", "commission"], after=1, max_lines=3)
+check("truncation is measured against everything gathered", e_cap.truncated, True)
 
 print("memory")
 with tempfile.TemporaryDirectory() as d:

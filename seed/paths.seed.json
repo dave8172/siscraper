@@ -1,56 +1,76 @@
 {
   "affiliate-terms": {
     "/affiliate": {
-      "tried": 0,
-      "won": 15
+      "tried": 425,
+      "won": 49
+    },
+    "/affiliate-marketing": {
+      "tried": 389,
+      "won": 6
+    },
+    "/affiliate-partners": {
+      "tried": 387,
+      "won": 1
     },
     "/affiliate-program": {
-      "tried": 0,
-      "won": 22
-    },
-    "/affiliate-programme": {
-      "tried": 0,
-      "won": 0
+      "tried": 438,
+      "won": 32
     },
     "/affiliates": {
-      "tried": 0,
+      "tried": 401,
       "won": 31
     },
-    "/become-an-affiliate": {
-      "tried": 0,
-      "won": 0
-    },
-    "/partner-program": {
-      "tried": 0,
-      "won": 1
-    },
-    "/partner-programs": {
-      "tried": 0,
+    "/ambassador-program": {
+      "tried": 389,
       "won": 2
     },
-    "/partners": {
-      "tried": 0,
-      "won": 27
-    },
-    "/partners/affiliate": {
-      "tried": 0,
-      "won": 0
-    },
-    "/partners/affiliates": {
-      "tried": 0,
-      "won": 0
-    },
-    "/refer": {
-      "tried": 0,
-      "won": 0
-    },
-    "/referral-program": {
-      "tried": 0,
+    "/become-an-affiliate": {
+      "tried": 389,
       "won": 1
     },
+    "/partner": {
+      "tried": 405,
+      "won": 8
+    },
+    "/partner-program": {
+      "tried": 389,
+      "won": 4
+    },
+    "/partners": {
+      "tried": 430,
+      "won": 28
+    },
+    "/partners/affiliate": {
+      "tried": 390,
+      "won": 1
+    },
+    "/partners/affiliate-program": {
+      "tried": 387,
+      "won": 3
+    },
+    "/partners/affiliates": {
+      "tried": 391,
+      "won": 3
+    },
+    "/partners/referral-program": {
+      "tried": 386,
+      "won": 1
+    },
+    "/refer": {
+      "tried": 389,
+      "won": 3
+    },
+    "/referral": {
+      "tried": 390,
+      "won": 17
+    },
+    "/referral-program": {
+      "tried": 391,
+      "won": 9
+    },
     "/referrals": {
-      "tried": 0,
-      "won": 0
+      "tried": 389,
+      "won": 2
     }
   }
 }

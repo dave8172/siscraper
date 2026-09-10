@@ -75,7 +75,7 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 
 ## Status
 
-**v0.1.1, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 13 rules. 31 tests, no network needed (`python3 -m tests.test_core`).
+**v0.1.1, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 14 rules. 36 tests, no network needed (`python3 -m tests.test_core`).
 
 **v0.1.1 came out of the first sweep large enough to hurt** — 400+ hosts for its first consumer. Four failures that a small pass never surfaces:
 
@@ -86,11 +86,17 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 | Cloudflare serves the same "Just a moment…" page when **throttling** (429) as when challenging, and the two mean opposite things | status is tested before the body; a 429 backs off, penalises that host's interval, and retries once |
 | Backoff alone gets worse the longer it runs: one strict host held a worker for ten minutes | `give_up_after` — three refusals in a row ends the host. 404s do not count; those are answers |
 
-Each is now a rule in `seed/RULES.md` (§2, §3, §10, §12) as well as code, because the next consumer will hit them before it reads the source.
+Each is now a rule in `seed/RULES.md` (§2, §3, §11, §13) as well as code, because the next consumer will hit them before it reads the source.
 
 Verified end to end against five hosts whose correct URLs were known by hand; all five matched, and a sixth was skipped from seed memory without spending a request.
 
-**Known gap, inherited from the seeding pass:** `seed/paths.seed.json` carries `won` counts with `tried: 0` — that pass logged only winners, so the denominators are gone for good. Locally-computed rates supersede them as soon as any consumer runs a sweep.
+**The seed's path order is now measured, not guessed.** It shipped with `won` counts and `tried: 0`, because the pass that produced it logged only winners. The first large consumer run replaced that with **9,090 logged attempts and 201 wins across 23 paths** — the first real denominator the seed has ever had. Three things changed as a result:
+
+- **`/affiliate` beats `/affiliates`** (11.5% vs 7.7%), and the guessed order had them the other way round.
+- **Five paths won nothing in ~390 tries each** and were dropped: `/affiliate-programme`, `/affiliate-programs`, `/affiliate/join`, `/partner-programme`, `/partner-programs`. They cost roughly 1,950 requests and returned zero. Keeping them "just in case" is exactly what measuring is for.
+- **`/affiliate-marketing` wins 1.5% and should be read with suspicion.** Almost every page it finds is the vendor's own *blog post explaining what affiliate marketing is* — high keyword density, no terms. It is the cleanest demonstration of §8 there is: scoring finds pages, it does not read them, and a path can win the score while losing every judgement.
+
+Local measurements still supersede the seed the moment any consumer runs its own sweep.
 
 **Exploration:** `Session(explore=0.1)` retries a tenth of the hosts memory says to skip, deterministic per host and day. Without it a scraper that trusts its memory can only ever lose hosts — a site that starts allowing traffic again is never noticed.
 

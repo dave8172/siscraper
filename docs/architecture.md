@@ -209,7 +209,7 @@ trusted.
 
 ## Related documents
 
-- **[`../seed/RULES.md`](../seed/RULES.md)** — the (c) knowledge itself: thirteen operational rules about how pages fail and what it costs to find out. Read it before interpreting any output. Ships with every copy.
+- **[`../seed/RULES.md`](../seed/RULES.md)** — the (c) knowledge itself: fourteen operational rules about how pages fail and what it costs to find out. Read it before interpreting any output. Ships with every copy.
 - **[`shared-learning.md`](shared-learning.md)** — the unbuilt design for pooling (a) and (b) across deployments, and the failure mode that decides whether it can work.
 
 This file explains the *system*. `RULES.md` holds the *craft*. They do not duplicate each other, and neither should grow into the other.

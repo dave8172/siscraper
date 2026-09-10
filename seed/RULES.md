@@ -59,35 +59,56 @@ The corollary bites in the other direction too: a nav item reading "PayPal" is n
 
 **And it bites a third way, which cost a false positive on this tool's first real run.** A noise list tuned to kill consent banners will eventually kill a *real* sentence containing the same words. One vendor answers "What is your referral cookie policy?" with the actual window — and a pattern matching `cookie policy` deleted the answer. Hence `protect`: a line carrying real signal (a percentage, an amount, a day count) survives noise. **Noise should only remove lines that are nothing but boilerplate.**
 
-## 5. The stdlib will quietly refuse to fetch anything
+## 5. The spec table splits the answer away from the question
+
+The most structured data on a vendor page is usually a two-column table, and
+after HTML-to-text it is two consecutive lines:
+
+    Cookie window
+    90 days
+    Minimum payout
+    $150
+
+Only the *label* matches a want-list. A line-at-a-time extractor returns the
+questions and discards every answer — and the page then looks like it
+published nothing, which is the one conclusion that must never be reached by
+accident (§3). **Keep a line of trailing context after each match.** It cost
+one page in this tool's first large pass to notice, and that page turned out
+to publish its rate, duration, cap, frequency, method and threshold — all of
+them in the column the extractor was throwing away.
+
+Trailing context is not a match. Count it separately, or the hit counts stop
+meaning anything.
+
+## 6. The stdlib will quietly refuse to fetch anything
 
 `urllib.robotparser.RobotFileParser.read()` sends Python's default User-Agent. A large number of sites answer that with a 403 — and the parser reads a 403 on `robots.txt` as **disallow-all**. The same file returns 200 under a browser UA.
 
 Left alone this silently blocks nearly every fetch, and it looks like politeness rather than a bug. Fetch `robots.txt` yourself with a real UA, parse the text, and treat an unreadable file as permission rather than a ban. **An unreadable robots.txt is not a ban; a readable one that says no is.**
 
-## 6. Guessing one URL per host is the expensive mistake
+## 7. Guessing one URL per host is the expensive mistake
 
 Sweeping thirteen paths costs twelve extra cheap requests. On the pass that produced this tool, **nine of eighty-six records came from hosts a single guessed URL had already written off as dead** — live all along, at a different path.
 
 Measured, `/affiliates` and `/partners` won most often, and `/partners` was ranked fifth by guesswork. **Order paths by measurement, never by intuition** — that is what `paths.json` is for.
 
-## 7. A structurally perfect hit can be semantically the wrong page
+## 8. A structurally perfect hit can be semantically the wrong page
 
 `fastspring.com/affiliates` scores beautifully and is about running *your own* affiliate programme, not joining theirs. Vendor "partner" pages routinely mean reseller, agency, integration, or investor.
 
 **Scoring finds candidate pages. It does not read them.** Something with judgment has to confirm the page answers the question asked.
 
-## 8. Self-healing means detect and refuse, never patch
+## 9. Self-healing means detect and refuse, never patch
 
 When extraction stops matching, the tempting repair is to loosen the pattern until data flows again. **Do not.** A scraper that loosens its own matching produces *wrong* data instead of *no* data, and wrong data is unrecoverable downstream — nobody can tell a fabricated number from a real one after the fact.
 
 Mark the host stale, say so, and stop. A consumer can act on "this went stale". Nobody recovers from a plausible number that is quietly false.
 
-## 9. Parallelism is not politeness
+## 10. Parallelism is not politeness
 
 Fourteen workers across eighty hosts is considerate. Fourteen aimed at one host is an attack. **Rate-limit per host and parallelise across hosts** — they are separate settings for a reason.
 
-## 10. A 429 is the host telling you your rate is wrong
+## 11. A 429 is the host telling you your rate is wrong
 
 Believe it, and slow that host down for the **rest of the run** rather than
 for one request. Retrying at the same pace is how one throttled host becomes a
@@ -109,13 +130,13 @@ wanted. It answered a question you did not ask. Writing "nothing here" from a
 429 invents a verdict; writing "blocked" refuses to ask again for months over
 a condition you caused. Record it as its own state.
 
-## 11. Record every attempt, not just the winner
+## 12. Record every attempt, not just the winner
 
 Logging only the path that worked makes win *counts* computable and hit *rates* impossible, because the denominator is gone. It cannot be backfilled — the requests are spent.
 
 The pass that produced this tool made exactly this mistake, which is why `seed/paths.seed.json` carries `won` counts with `tried: 0`. Do not repeat it.
 
-## 12. A miss is two facts, and only one of them is a block
+## 13. A miss is two facts, and only one of them is a block
 
 A sweep that finds nothing has two completely different causes, and the
 difference decides whether you should ever ask again:
@@ -136,7 +157,7 @@ that would have lowered them are no longer sampled.
 The same asymmetry runs through §3: what a failure *means* determines the
 response, and status alone never carries the meaning.
 
-## 13. What belongs where
+## 14. What belongs where
 
 - A fact about **one host's reachability** → `hosts.json`. Universal; the only host knowledge that ships in the seed.
 - A fact about **one host, for one task** ("no programme here") → local memory. One project's finding.

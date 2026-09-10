@@ -17,6 +17,11 @@ class Extract:
     lines: list[str]
     matched: int          # distinct lines that matched, before the cap
     total: int = 0        # every match including duplicates
+    collected: int = 0    # distinct lines gathered, matches + trailing context
+
+    def __post_init__(self):
+        if not self.collected:
+            self.collected = self.matched
 
     @property
     def truncated(self) -> bool:
@@ -25,15 +30,19 @@ class Extract:
         Kept distinct from deduplication on purpose: a caller that sees
         `truncated` needs to know whether raising max_lines would reveal more,
         and removing a repeated line does not mean anything was lost.
+
+        Measured against everything gathered rather than against `matched`:
+        once trailing context is in play the two differ, and it is the cap on
+        *returned* lines that decides whether anything was lost.
         """
-        return self.matched > len(self.lines)
+        return self.collected > len(self.lines)
 
     def __str__(self) -> str:
         return "\n".join(self.lines)
 
 
 def extract(text: str, want, noise=(), protect=(), max_lines: int = DEFAULT_MAX_LINES,
-            max_chars: int = DEFAULT_MAX_CHARS) -> Extract:
+            max_chars: int = DEFAULT_MAX_CHARS, after: int = 0) -> Extract:
     """`want` and `noise` are regex strings or compiled patterns.
 
     Noise is subtracted after matching, never before: the boilerplate that
@@ -47,26 +56,45 @@ def extract(text: str, want, noise=(), protect=(), max_lines: int = DEFAULT_MAX_
     referral cookie policy?" with the actual window, and a pattern matching
     "cookie policy" deletes the answer. A line matching `protect` survives
     noise: it should only remove lines that are *nothing but* boilerplate.
+
+    `after` keeps N lines following each match, and exists for one specific
+    and very common layout: the spec table. "Cookie window" on one line,
+    "90 days" on the next. Only the label matches the want-list, so a
+    line-at-a-time extractor returns the question and throws away the answer
+    -- and the page looks like it published nothing. Cheap to fix, easy to
+    miss, and it silently loses the most structured data on the page.
     """
     want_re = _compile(want)
     noise_re = _compile(noise) if noise else None
     protect_re = _compile(protect) if protect else None
 
-    seen, distinct, total = set(), [], 0
+    seen, distinct, total, matched = set(), [], 0, 0
+    carry = 0
     for raw in text.split("\n"):
         line = raw.strip()
-        if not line or not want_re.search(line):
+        if not line:
+            continue
+        hit = bool(want_re.search(line))
+        if not hit and carry <= 0:
             continue
         if noise_re and noise_re.search(line):
             if not (protect_re and protect_re.search(line)):
                 continue
-        total += 1
+        if hit:
+            total += 1
+            carry = after
+        else:
+            carry -= 1        # trailing context, not a match of its own
         clipped = line[:max_chars]
         if clipped in seen:
             continue
         seen.add(clipped)
         distinct.append(clipped)
-    return Extract(lines=distinct[:max_lines], matched=len(distinct), total=total)
+        # Context lines are returned but never counted as matches -- a hit
+        # count that includes them stops meaning anything.
+        matched += 1 if hit else 0
+    return Extract(lines=distinct[:max_lines], matched=matched, total=total,
+                   collected=len(distinct))
 
 
 def score(text: str, keywords, weights=None) -> int:

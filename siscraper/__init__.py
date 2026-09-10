@@ -27,7 +27,7 @@ __version__ = "0.1.1"
 # invisible -- and it looks like memory working, not memory lying.
 #
 # Reachability is universal and ships in the seed; "nothing at the paths I
-# swept" is one task's finding and stays local (seed/RULES.md §12, §13).
+# swept" is one task's finding and stays local (seed/RULES.md §13, §14).
 REACHED = frozenset({"ok", "not-found", "js-shell", "redirected-to-root",
                      "empty-body", "rate-limited"})
 
@@ -113,12 +113,17 @@ class Session:
         digest = hashlib.sha256(seed.encode()).digest()
         return (int.from_bytes(digest[:4], "big") / 0xFFFFFFFF) < self.explore
 
-    def read(self, url, want, protect=(), max_lines=30, escalate=True):
-        """Fetch one page and return only the lines that could hold an answer."""
+    def read(self, url, want, protect=(), max_lines=30, escalate=True, after=1):
+        """Fetch one page and return only the lines that could hold an answer.
+
+        `after` defaults to 1 because spec tables are everywhere: the label
+        matches the want-list and the value sits on the next line, so reading
+        line-at-a-time returns "Cookie window" and discards "90 days".
+        """
         r = self.fetcher.get(url, escalate=escalate)
         if not r.ok or r.js_shell:
             return None, r
         text = to_text(r.body)
         noise = self.memory.noise_patterns("html")
         return extract(text, want, noise=noise, protect=protect,
-                       max_lines=max_lines), r
+                       max_lines=max_lines, after=after), r
