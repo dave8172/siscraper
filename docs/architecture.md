@@ -185,9 +185,31 @@ Break any of these and the design stops working:
 
 ---
 
+## Known limitation: one writer at a time
+
+`memory/` is safe against a crash and unsafe against a sibling. Each `Memory`
+holds the whole of `hosts.json` in memory and rewrites it atomically, so an
+interrupted run never leaves a half-written file — but two processes sweeping
+different hosts into the same `.siscraper` will each write their own complete
+picture, and the last one to finish wins. Everything the other learned is
+gone, silently, with no error and a perfectly valid file left behind.
+
+This surfaced the first time a consumer wanted to halve a forty-minute run by
+splitting it in two. **Run batches sequentially**, or give each parallel run
+its own `root=` and merge afterwards. Parallelism *within* one run is fine:
+that is threads sharing a single `Memory` behind its lock.
+
+The fix — a lock file and read-modify-write on each dump — is small and
+deliberately not built yet, on the same principle as everything else in the
+not-built list. It costs a real run being slower, which is a smaller price
+than a concurrency bug in the part of the tool whose whole job is to be
+trusted.
+
+---
+
 ## Related documents
 
-- **[`../seed/RULES.md`](../seed/RULES.md)** — the (c) knowledge itself: eleven operational rules about how pages fail and what it costs to find out. Read it before interpreting any output. Ships with every copy.
+- **[`../seed/RULES.md`](../seed/RULES.md)** — the (c) knowledge itself: thirteen operational rules about how pages fail and what it costs to find out. Read it before interpreting any output. Ships with every copy.
 - **[`shared-learning.md`](shared-learning.md)** — the unbuilt design for pooling (a) and (b) across deployments, and the failure mode that decides whether it can work.
 
 This file explains the *system*. `RULES.md` holds the *craft*. They do not duplicate each other, and neither should grow into the other.
