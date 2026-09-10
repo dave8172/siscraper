@@ -75,7 +75,18 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 
 ## Status
 
-**v0.1.0, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 11 rules. 16 tests, no network needed (`python3 -m tests.test_core`).
+**v0.1.1, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 13 rules. 31 tests, no network needed (`python3 -m tests.test_core`).
+
+**v0.1.1 came out of the first sweep large enough to hurt** — 400+ hosts for its first consumer. Four failures that a small pass never surfaces:
+
+| Found | Fixed by |
+|---|---|
+| A catch-all `301` to `/` scored like a terms page, because the homepage footer says "Affiliates" | `landed_on_root` — compare the path you asked for with the one you landed on |
+| A sweep where every path 404s was written to memory as **blocked**, so a reachable host whose page sits at an unguessed path was skipped for 90 days | `Session._record_miss` — a miss is a task outcome unless nothing answered at all |
+| Cloudflare serves the same "Just a moment…" page when **throttling** (429) as when challenging, and the two mean opposite things | status is tested before the body; a 429 backs off, penalises that host's interval, and retries once |
+| Backoff alone gets worse the longer it runs: one strict host held a worker for ten minutes | `give_up_after` — three refusals in a row ends the host. 404s do not count; those are answers |
+
+Each is now a rule in `seed/RULES.md` (§2, §3, §10, §12) as well as code, because the next consumer will hit them before it reads the source.
 
 Verified end to end against five hosts whose correct URLs were known by hand; all five matched, and a sixth was skipped from seed memory without spending a request.
 

@@ -154,7 +154,8 @@ class Memory:
             for h in hits:
                 fh.write(json.dumps({
                     "host": h.host, "task": task, "won_path": h.path,
-                    "score": h.score, "attempts": h.attempts,
+                    "score": h.score, "gave_up": getattr(h, "gave_up", 0),
+                    "attempts": h.attempts,
                 }, ensure_ascii=False) + "\n")
         return f
 

@@ -6,6 +6,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from siscraper.text import to_text
 from siscraper.extract import extract, score
 from siscraper.memory import Memory
+from siscraper.probe import Hit, landed_on_root, probe_host
+from siscraper import Session
+from siscraper.fetch import RateLimiter, Result
 
 def check(name, got, want):
     assert got == want, f"{name}: got {got!r}, want {want!r}"
@@ -47,5 +50,78 @@ with tempfile.TemporaryDirectory() as d:
     old = Memory(root=root)
     old.hosts["stale.com"] = {"reach": "blocked", "last_seen": "2020-01-01"}
     check("stale block is retried", old.known("stale.com").skip, False)
+
+print("probe")
+check("root bounce is a miss", landed_on_root("/affiliates", "https://x.com/"), True)
+check("trailing slash root too", landed_on_root("/partners", "https://x.com"), True)
+check("helpful redirect still counts",
+      landed_on_root("/affiliates", "https://x.com/affiliate-program/"), False)
+check("same path is not a bounce",
+      landed_on_root("/partners", "https://www.x.com/partners/"), False)
+check("asking for root is not a bounce", landed_on_root("/", "https://x.com/"), False)
+
+print("giving up")
+class _Refusing:
+    """Every path answers 429; nothing is ever readable."""
+    def __init__(self): self.calls = 0
+    def get(self, url, escalate=False):
+        self.calls += 1
+        return Result(url=url, final_url=url, status=429, body="Just a moment...")
+
+f = _Refusing()
+h = probe_host("strict.com", ["/a", "/b", "/c", "/d", "/e"], ["affiliate"],
+               fetcher=f, give_up_after=3)
+check("stops after three refusals", f.calls, 3)
+check("records what it skipped", h.gave_up, 2)
+check("skipped paths are not logged as attempts", len(h.attempts), 3)
+
+class _NotFound:
+    def __init__(self): self.calls = 0
+    def get(self, url, escalate=False):
+        self.calls += 1
+        return Result(url=url, final_url=url, status=404, body="<p>nope</p>")
+
+f2 = _NotFound()
+probe_host("quiet.com", ["/a", "/b", "/c", "/d", "/e"], ["affiliate"],
+           fetcher=f2, give_up_after=3)
+check("404s are answers, not refusals — sweep continues", f2.calls, 5)
+
+print("sweep bookkeeping")
+with tempfile.TemporaryDirectory() as d:
+    root = Path(d)
+    (root / "seed").mkdir()
+    s404 = Session("t", root=root)
+    # Every path answered, nothing found: the host is fine, the paths were wrong.
+    s404._record_miss(Hit(host="quiet.com", attempts=[
+        {"path": "/a", "status": 404, "diagnosis": "not-found", "score": 0},
+        {"path": "/b", "status": 404, "diagnosis": "not-found", "score": 0}]))
+    check("404 sweep is not a block", s404.memory.known("quiet.com").reach, "ok")
+    check("404 sweep is retried later", s404.memory.known("quiet.com").skip, False)
+    check("404 sweep is a task outcome",
+          s404.memory.known("quiet.com").status, "not-found")
+    # Nothing answered at all: that is worth not paying for twice.
+    s404._record_miss(Hit(host="walled.com", attempts=[
+        {"path": "/a", "status": 0, "diagnosis": "cloudflare-interstitial", "score": 0},
+        {"path": "/b", "status": 0, "diagnosis": "timeout", "score": 0}]))
+    check("unreachable host is blocked",
+          s404.memory.known("walled.com").reach, "blocked")
+    check("blocked host is skipped", s404.memory.known("walled.com").skip, True)
+    # Throttling says nothing about whether the host has what we want.
+    s404._record_miss(Hit(host="strict.com", attempts=[
+        {"path": "/a", "status": 429, "diagnosis": "rate-limited", "score": 0},
+        {"path": "/b", "status": 429, "diagnosis": "rate-limited", "score": 0}]))
+    check("throttled is neither block nor verdict",
+          (s404.memory.known("strict.com").reach,
+           s404.memory.known("strict.com").status), ("ok", "throttled"))
+
+print("fetch diagnosis")
+r429 = Result(url="u", status=429, body="Just a moment...")
+check("429 outranks the interstitial it ships with", r429.diagnosis(), "rate-limited")
+check("empty 200 is not ok", Result(url="u", status=200, body="").diagnosis(), "empty-body")
+check("real 200 is ok", Result(url="u", status=200, body="<p>hi</p>").diagnosis(), "ok")
+lim = RateLimiter(1.0)
+check("penalty compounds", (lim.penalise("h"), lim.penalise("h")), (4.0, 16.0))
+check("penalty is capped", lim.penalise("h"), RateLimiter.MAX_INTERVAL)
+check("one host's penalty is its own", lim.interval_for("other"), 1.0)
 
 print("\nall passed")

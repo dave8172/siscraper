@@ -50,6 +50,7 @@ class Result:
     error: str = ""          # "" when the fetch itself worked
     interstitial: bool = False
     js_shell: bool = False
+    retry_after: str = ""
 
     @property
     def ok(self) -> bool:
@@ -57,12 +58,24 @@ class Result:
 
     def diagnosis(self) -> str:
         """One token describing the outcome, for the host memory."""
+        # 429 first, and ahead of the interstitial test on purpose: Cloudflare
+        # serves its challenge page *with* a 429 when it is throttling rather
+        # than challenging. Both look identical in the body and mean opposite
+        # things -- an interstitial never clears, a throttle clears by waiting.
+        if self.status == 429:
+            return "rate-limited"
         if self.interstitial:
             return "cloudflare-interstitial"
         if self.error:
             return self.error
         if self.status == 404:
             return "not-found"
+        # A 200 that carried no document at all. Not an error, not a shell,
+        # and emphatically not "ok" -- a browser would render nothing either,
+        # so escalating buys nothing and the honest answer is that the page
+        # is empty. jotform.com/partner/ serves a 20-byte empty gzip stream.
+        if self.status == 200 and not self.body.strip():
+            return "empty-body"
         if self.status in (401, 403):
             return "forbidden"
         if self.status >= 500:
@@ -79,18 +92,38 @@ class RateLimiter:
     fourteen workers spread over eighty domains is fine, fourteen aimed at one
     host is not."""
 
+    MAX_INTERVAL = 30.0
+
     def __init__(self, min_interval: float = 1.0):
         self.min_interval = min_interval
         self._last: dict[str, float] = {}
+        self._interval: dict[str, float] = {}
         self._lock = threading.Lock()
 
+    def interval_for(self, host: str) -> float:
+        return self._interval.get(host, self.min_interval)
+
+    def penalise(self, host: str, factor: float = 4.0) -> float:
+        """A 429 is the host telling you your rate is wrong. Believe it.
+
+        Retrying at the same pace is what turns one throttled host into a
+        whole sweep of them, and the cost lands on the next task to touch
+        that host as much as on this one. The slower interval sticks for the
+        rest of the run rather than for one request.
+        """
+        with self._lock:
+            cur = self._interval.get(host, self.min_interval) or 1.0
+            self._interval[host] = min(cur * factor, self.MAX_INTERVAL)
+            return self._interval[host]
+
     def wait(self, host: str) -> None:
-        if self.min_interval <= 0:
+        if self.min_interval <= 0 and host not in self._interval:
             return
         while True:
             with self._lock:
                 now = time.monotonic()
-                earliest = self._last.get(host, 0.0) + self.min_interval
+                gap = self._interval.get(host, self.min_interval)
+                earliest = self._last.get(host, 0.0) + gap
                 if now >= earliest:
                     self._last[host] = now
                     return
@@ -129,6 +162,7 @@ class Fetcher:
         except urllib.error.HTTPError as e:
             r.status = e.code
             r.final_url = url
+            r.retry_after = e.headers.get("Retry-After", "") or ""
             try:
                 r.body = _decode(e.read(), e.headers)
             except Exception:
@@ -170,6 +204,8 @@ class Fetcher:
     # -- the ladder --------------------------------------------------------
     def get(self, url: str, escalate: bool = True) -> Result:
         r = self.plain(url)
+        if r.status == 429:
+            r = self._after_backoff(url, r)
         # A js-shell is a *successful* fetch -- 200, no error -- which is
         # exactly why `ok` alone must not end the ladder. The request worked;
         # the page just isn't there yet.
@@ -183,6 +219,20 @@ class Fetcher:
             up.rung = HEADLESS
             return up
         return r
+
+    def _after_backoff(self, url: str, first: Result) -> Result:
+        """Wait out one throttle and try again; keep the better answer.
+
+        Exactly one retry. A host that is still refusing after honouring its
+        own Retry-After is not going to yield to persistence, and the run has
+        hundreds of other hosts to spend the time on.
+        """
+        host = urlparse(url).hostname or ""
+        gap = self.limiter.penalise(host)
+        wait = _retry_after(first) or gap
+        time.sleep(min(wait, RateLimiter.MAX_INTERVAL))
+        second = self.plain(url)
+        return second if second.status != 429 else first
 
     def _allowed(self, url: str, host: str) -> bool:
         with self._robots_lock:
@@ -254,6 +304,14 @@ def chrome_binary() -> str | None:
             if os.access(hit, os.X_OK):
                 return hit
     return None
+
+
+def _retry_after(r: Result) -> float:
+    """Seconds the host asked for, when it bothered to say."""
+    try:
+        return float(r.retry_after)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _decode(raw: bytes, headers) -> str:

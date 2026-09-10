@@ -5,6 +5,7 @@ grows its own local memory. Read order is local first, seed as the floor.
 """
 import hashlib
 import time
+from collections import Counter
 from .extract import Extract, extract, score
 from .fetch import Fetcher, RateLimiter, Result
 from .memory import Known, Memory
@@ -13,8 +14,28 @@ from .text import to_text
 
 __all__ = ["Fetcher", "RateLimiter", "Result", "to_text", "extract", "Extract",
            "score", "Memory", "Known", "probe_host", "probe_many", "Hit",
-           "host_of", "Session"]
-__version__ = "0.1.0"
+           "host_of", "Session", "REACHED"]
+__version__ = "0.1.1"
+
+# Diagnoses that prove the host answered us.
+#
+# A 404 is a reachable host with nothing at that path. An interstitial, a
+# timeout or a DNS failure is a host we could not reach at all. Writing
+# "blocked" over the first kind is not a cosmetic error: `Known.skip` then
+# refuses to spend a request on that host for ninety days, so a site whose
+# programme simply sits at a path nobody guessed becomes permanently
+# invisible -- and it looks like memory working, not memory lying.
+#
+# Reachability is universal and ships in the seed; "nothing at the paths I
+# swept" is one task's finding and stays local (seed/RULES.md §12, §13).
+REACHED = frozenset({"ok", "not-found", "js-shell", "redirected-to-root",
+                     "empty-body", "rate-limited"})
+
+# A host that only ever answered 429 has not told us anything about whether
+# it has what we want. Recording that as "not-found" would be inventing a
+# verdict; recording it as a block would refuse to ask again for ninety days
+# over what is a temporary state of our own making.
+THROTTLED = "rate-limited"
 
 
 class Session:
@@ -51,11 +72,28 @@ class Session:
                 self.memory.record_reach(h.host, "ok", rung="plain",
                                          url=h.url, path=h.path)
             else:
-                last = h.attempts[-1]["diagnosis"] if h.attempts else "unknown"
-                self.memory.record_reach(h.host, "blocked", reason=last)
+                self._record_miss(h)
         if hits:
             self.memory.log_run(self.task, hits)
         return hits, skipped
+
+    def _record_miss(self, hit):
+        """A sweep that found nothing is two different facts, not one.
+
+        Every path 404ing means the host is fine and the paths were wrong --
+        a task outcome, retried the moment the path list grows. Every path
+        timing out means the host is unreachable, which is worth not paying
+        for twice. Only the second is a block.
+        """
+        seen = [a["diagnosis"] for a in hit.attempts]
+        dominant = Counter(seen).most_common(1)[0][0] if seen else "unknown"
+        if set(seen) & REACHED:
+            self.memory.record_reach(hit.host, "ok", rung="plain")
+            status = "throttled" if dominant == THROTTLED else "not-found"
+            self.memory.record_outcome(
+                hit.host, self.task, status, reason=dominant)
+        else:
+            self.memory.record_reach(hit.host, "blocked", reason=dominant)
 
     def _explore(self, host: str) -> bool:
         """Deliberately retry a host memory says to skip.

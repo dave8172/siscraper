@@ -20,7 +20,15 @@ Plenty of sites answer any unknown path with a catch-all page. Status tells you 
 
 Corollary: never write "found" into memory on a status code alone.
 
-## 3. Distinguish the four ways a page fails
+**The sharpest version of this is the catch-all redirect.** A large minority of
+sites answer an unknown path with a `301` to `/` rather than a `404` — so the
+request for `/affiliates` returns 200, a real body, and a homepage whose footer
+says "Affiliates". It scores like a terms page and it is not one. Compare the
+path you asked for against the path you landed on: **landing on the root is a
+miss.** Keep the test narrow — `/affiliates` → `/affiliate-program/` is a site
+being helpful, and must still count.
+
+## 3. Distinguish the ways a page fails
 
 **A script-rendered shell is a *successful* fetch.** 200, no error, no redirect — and nothing on the page. That is exactly why "did the request succeed" must never be what ends an escalation ladder: the request did succeed. The page is simply not there yet. This tool shipped with that bug for an hour; it returned a Podia page with 65KB of HTML and sixteen characters of text, and reported the terms as missing.
 
@@ -30,8 +38,16 @@ They look identical from the outside and mean opposite things:
 |---|---|---|
 | Empty answer | Vendor genuinely does not publish it | **Record it.** A stated absence is a finding. |
 | Empty answer | Content rendered by script after load | Escalate a rung |
+| Empty answer | A 200 carrying no document at all | Record `empty-body`. A browser renders nothing either — escalating buys nothing. |
 | Blocked | Cloudflare interstitial | Escalate, then give up — headless does not clear it |
+| Blocked | Cloudflare *throttling*, which serves the same page with a 429 | Back off and retry once. It clears; an interstitial does not. |
 | Blocked | robots-disallowed | Do not escalate. Respect it. |
+
+**The last two are the same page.** Cloudflare returns "Just a moment…" both
+when it is challenging you and when it is rate-limiting you, and only the
+status code separates them — so **test the status before the body**. Read one
+as the other and you either abandon a reachable host forever or keep hammering
+a wall.
 
 **This is the single most important distinction in the tool.** On the pass that produced siscraper, several vendor pages posed a question ("What is the cookie duration?") whose answer lived in an accordion that never rendered. Treating that as "not published" would have been a fabricated fact; treating a genuine silence as a fetch bug would have hidden a real finding.
 
@@ -71,13 +87,56 @@ Mark the host stale, say so, and stop. A consumer can act on "this went stale". 
 
 Fourteen workers across eighty hosts is considerate. Fourteen aimed at one host is an attack. **Rate-limit per host and parallelise across hosts** — they are separate settings for a reason.
 
-## 10. Record every attempt, not just the winner
+## 10. A 429 is the host telling you your rate is wrong
+
+Believe it, and slow that host down for the **rest of the run** rather than
+for one request. Retrying at the same pace is how one throttled host becomes a
+whole sweep of them.
+
+It is also worth exactly one retry. A host still refusing after you have
+honoured its own `Retry-After` is not going to yield to persistence, and a
+sweep always has hundreds of other hosts to spend that time on.
+
+**And it needs a circuit breaker, because backoff alone gets worse the longer
+it runs.** Each successive 429 slows that host further, so a strict host
+sweeping twenty paths costs more with every attempt — one of them can hold a
+worker for ten minutes while hundreds of hosts wait. Three refusals in a row
+and the host is done for this pass. Count only *refusals*: a run of 404s is
+the host answering, and working through those is the entire point of a sweep.
+
+Note what a throttle is *not*: evidence about whether the host has what you
+wanted. It answered a question you did not ask. Writing "nothing here" from a
+429 invents a verdict; writing "blocked" refuses to ask again for months over
+a condition you caused. Record it as its own state.
+
+## 11. Record every attempt, not just the winner
 
 Logging only the path that worked makes win *counts* computable and hit *rates* impossible, because the denominator is gone. It cannot be backfilled — the requests are spent.
 
 The pass that produced this tool made exactly this mistake, which is why `seed/paths.seed.json` carries `won` counts with `tried: 0`. Do not repeat it.
 
-## 11. What belongs where
+## 12. A miss is two facts, and only one of them is a block
+
+A sweep that finds nothing has two completely different causes, and the
+difference decides whether you should ever ask again:
+
+- **Every path 404s.** The host answered every time. It is reachable, and the
+  paths were wrong. This is a *task outcome*, and it must be retried the moment
+  the path list grows or the task changes.
+- **Nothing answered at all** — interstitial, timeout, DNS, refused. This is a
+  *reachability* fact, and it is worth not paying for twice.
+
+Recording the first as "blocked" is not a cosmetic error. Skip logic then
+refuses to spend a request on a perfectly reachable host until the verdict ages
+out, so a vendor whose programme simply sits at a path nobody guessed becomes
+invisible — **and it looks like memory working rather than memory lying**,
+which is why it survives review. The counts even improve, because the hosts
+that would have lowered them are no longer sampled.
+
+The same asymmetry runs through §3: what a failure *means* determines the
+response, and status alone never carries the meaning.
+
+## 13. What belongs where
 
 - A fact about **one host's reachability** → `hosts.json`. Universal; the only host knowledge that ships in the seed.
 - A fact about **one host, for one task** ("no programme here") → local memory. One project's finding.
