@@ -14,7 +14,16 @@
     "your consent",
     "gdpr",
     "skip to (main )?content",
-    "^(home|menu|search|login|sign ?up|toggle)$"
+    "^(home|menu|search|login|sign ?up|toggle)$",
+    "this cookie (is|name)",
+    "these cookies (are|allow|enable|may)",
+    "(targeting|performance|functional|analytics|advertising) cookies",
+    "cookie (report|list|declaration|details)",
+    "set by (google|youtube|stripe|linkedin|facebook|hotjar)",
+    "(google )?(universal )?analytics",
+    "store or retrieve information",
+    "cookie-einstellungen|wir verwenden cookies",
+    "^(pay ?pal|stripe|visa|mastercard|amex)$"
   ],
   "nav": [
     "^\\s*(products?|features?|pricing|resources?|company|blog|docs)\\s*$"
