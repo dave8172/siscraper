@@ -94,6 +94,6 @@ Verified end to end against five hosts whose correct URLs were known by hand; al
 
 **Exploration:** `Session(explore=0.1)` retries a tenth of the hosts memory says to skip, deterministic per host and day. Without it a scraper that trusts its memory can only ever lose hosts — a site that starts allowing traffic again is never noticed.
 
-**Not built, deliberately:** promotion tooling, run-log compaction, caching, retry/backoff policy, proxy rotation, a config file. Add when a real consumer needs one, not before.
+**Not built, deliberately:** promotion tooling, run-log compaction, caching, proxy rotation, a config file. Add when a real consumer needs one, not before. (Retry/backoff was on this list until a 400-host sweep needed it — which is the list working as intended.)
 
 **Shared learning** — separate deployments pooling what they learn, so every copy improves from any copy's work — is designed but unbuilt. `docs/shared-learning.md` records the shape, the trust model, and the failure mode that decides whether it can work at all. It should wait for a third deployment.
