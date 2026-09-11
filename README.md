@@ -77,7 +77,7 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 
 ## Status
 
-**v0.1.1, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 14 rules. 36 tests, no network needed (`python3 -m tests.test_core`).
+**v0.1.1, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 15 rules. 47 tests, no network needed (`python3 -m tests.test_core`).
 
 **v0.1.1 came out of the first sweep large enough to hurt** — 400+ hosts for its first consumer. Four failures that a small pass never surfaces:
 
@@ -88,7 +88,7 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 | Cloudflare serves the same "Just a moment…" page when **throttling** (429) as when challenging, and the two mean opposite things | status is tested before the body; a 429 backs off, penalises that host's interval, and retries once |
 | Backoff alone gets worse the longer it runs: one strict host held a worker for ten minutes | `give_up_after` — three refusals in a row ends the host. 404s do not count; those are answers |
 
-Each is now a rule in `seed/RULES.md` (§2, §3, §11, §13) as well as code, because the next consumer will hit them before it reads the source.
+Each is now a rule in `seed/RULES.md` (§2, §3, §12, §14) as well as code, because the next consumer will hit them before it reads the source.
 
 Verified end to end against five hosts whose correct URLs were known by hand; all five matched, and a sixth was skipped from seed memory without spending a request.
 

@@ -7,6 +7,7 @@ scraper that collapses them into "failed" makes the same expensive mistake
 every run.
 """
 import glob
+import http.cookiejar
 import os
 import re
 import subprocess
@@ -80,6 +81,9 @@ class Result:
             return "forbidden"
         if self.status >= 500:
             return "server-error"
+        # A 3xx that survived the redirect handler is a loop, not a move.
+        if 300 <= self.status < 400:
+            return "redirect-loop"
         if self.js_shell:
             return "js-shell"
         if self.status == 200:
@@ -137,12 +141,21 @@ class Fetcher:
     min_interval: float = 1.0
     respect_robots: bool = True
     limiter: RateLimiter = field(default=None)
+    opener: object = field(default=None)
     _robots: dict = field(default_factory=dict)
     _robots_lock: threading.Lock = field(default_factory=threading.Lock)
 
     def __post_init__(self):
         if self.limiter is None:
             self.limiter = RateLimiter(self.min_interval)
+        # A cookie jar, because a surprising number of sites 301 to *the same
+        # URL* after setting a cookie -- a language or region gate. Without a
+        # jar that is an infinite redirect the stdlib aborts as "http-301",
+        # which looks like a broken link and is actually a page that works
+        # fine in any browser. snov.io/affiliate-program does exactly this.
+        if self.opener is None:
+            self.opener = urllib.request.build_opener(
+                urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
     # -- rung 1 ------------------------------------------------------------
     def plain(self, url: str) -> Result:
@@ -154,7 +167,7 @@ class Fetcher:
         self.limiter.wait(host)
         req = urllib.request.Request(url, headers=HEADERS)
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with self.opener.open(req, timeout=self.timeout) as resp:
                 raw = resp.read()
                 r.status = resp.status
                 r.final_url = resp.geturl()
@@ -206,6 +219,13 @@ class Fetcher:
         r = self.plain(url)
         if r.status == 429:
             r = self._after_backoff(url, r)
+        elif 300 <= r.status < 400:
+            # A cookie gate, not a move: the site redirects to the same URL
+            # after setting a cookie, and may need more than one round trip to
+            # set all of them. The jar has warmed up by now, so one retry
+            # usually lands -- snov.io needs two cookies and succeeds on the
+            # second call. Exactly one retry; a real loop stays a loop.
+            r = self.plain(url)
         # A js-shell is a *successful* fetch -- 200, no error -- which is
         # exactly why `ok` alone must not end the ladder. The request worked;
         # the page just isn't there yet.

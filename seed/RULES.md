@@ -80,35 +80,54 @@ them in the column the extractor was throwing away.
 Trailing context is not a match. Count it separately, or the hit counts stop
 meaning anything.
 
-## 6. The stdlib will quietly refuse to fetch anything
+## 6. A redirect to the same URL is a cookie gate, not a loop
+
+Plenty of sites answer the first request with a `301` whose `Location` is **the
+URL you just asked for**, plus a `Set-Cookie` — a language or region gate. With
+no cookie jar that is an infinite redirect, and the stdlib gives up and reports
+it as a plain `301`. It looks like a dead link. It is a page that works
+perfectly in any browser.
+
+Two things are needed, and one alone is not enough:
+
+- **A cookie jar.** `http.cookiejar` is stdlib, so this costs nothing.
+- **One retry.** A site may set more than one cookie to get through, and the
+  redirect handler can give up before collecting them all — `snov.io` needs two
+  and succeeds on the second call, with the jar warmed. Retry exactly once; a
+  genuine loop stays a loop.
+
+Diagnose it as its own thing. `http-301` tells whoever reads the run log
+nothing; `redirect-loop` tells them to look at cookies.
+
+## 7. The stdlib will quietly refuse to fetch anything
 
 `urllib.robotparser.RobotFileParser.read()` sends Python's default User-Agent. A large number of sites answer that with a 403 — and the parser reads a 403 on `robots.txt` as **disallow-all**. The same file returns 200 under a browser UA.
 
 Left alone this silently blocks nearly every fetch, and it looks like politeness rather than a bug. Fetch `robots.txt` yourself with a real UA, parse the text, and treat an unreadable file as permission rather than a ban. **An unreadable robots.txt is not a ban; a readable one that says no is.**
 
-## 7. Guessing one URL per host is the expensive mistake
+## 8. Guessing one URL per host is the expensive mistake
 
 Sweeping thirteen paths costs twelve extra cheap requests. On the pass that produced this tool, **nine of eighty-six records came from hosts a single guessed URL had already written off as dead** — live all along, at a different path.
 
 Measured, `/affiliates` and `/partners` won most often, and `/partners` was ranked fifth by guesswork. **Order paths by measurement, never by intuition** — that is what `paths.json` is for.
 
-## 8. A structurally perfect hit can be semantically the wrong page
+## 9. A structurally perfect hit can be semantically the wrong page
 
 `fastspring.com/affiliates` scores beautifully and is about running *your own* affiliate programme, not joining theirs. Vendor "partner" pages routinely mean reseller, agency, integration, or investor.
 
 **Scoring finds candidate pages. It does not read them.** Something with judgment has to confirm the page answers the question asked.
 
-## 9. Self-healing means detect and refuse, never patch
+## 10. Self-healing means detect and refuse, never patch
 
 When extraction stops matching, the tempting repair is to loosen the pattern until data flows again. **Do not.** A scraper that loosens its own matching produces *wrong* data instead of *no* data, and wrong data is unrecoverable downstream — nobody can tell a fabricated number from a real one after the fact.
 
 Mark the host stale, say so, and stop. A consumer can act on "this went stale". Nobody recovers from a plausible number that is quietly false.
 
-## 10. Parallelism is not politeness
+## 11. Parallelism is not politeness
 
 Fourteen workers across eighty hosts is considerate. Fourteen aimed at one host is an attack. **Rate-limit per host and parallelise across hosts** — they are separate settings for a reason.
 
-## 11. A 429 is the host telling you your rate is wrong
+## 12. A 429 is the host telling you your rate is wrong
 
 Believe it, and slow that host down for the **rest of the run** rather than
 for one request. Retrying at the same pace is how one throttled host becomes a
@@ -130,13 +149,13 @@ wanted. It answered a question you did not ask. Writing "nothing here" from a
 429 invents a verdict; writing "blocked" refuses to ask again for months over
 a condition you caused. Record it as its own state.
 
-## 12. Record every attempt, not just the winner
+## 13. Record every attempt, not just the winner
 
 Logging only the path that worked makes win *counts* computable and hit *rates* impossible, because the denominator is gone. It cannot be backfilled — the requests are spent.
 
 The pass that produced this tool made exactly this mistake, which is why `seed/paths.seed.json` carries `won` counts with `tried: 0`. Do not repeat it.
 
-## 13. A miss is two facts, and only one of them is a block
+## 14. A miss is two facts, and only one of them is a block
 
 A sweep that finds nothing has two completely different causes, and the
 difference decides whether you should ever ask again:
@@ -157,7 +176,7 @@ that would have lowered them are no longer sampled.
 The same asymmetry runs through §3: what a failure *means* determines the
 response, and status alone never carries the meaning.
 
-## 14. What belongs where
+## 15. What belongs where
 
 - A fact about **one host's reachability** → `hosts.json`. Universal; the only host knowledge that ships in the seed.
 - A fact about **one host, for one task** ("no programme here") → local memory. One project's finding.

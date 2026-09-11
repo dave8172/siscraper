@@ -210,7 +210,7 @@ trusted.
 
 ## Related documents
 
-- **[`../seed/RULES.md`](../seed/RULES.md)** — the (c) knowledge itself: fourteen operational rules about how pages fail and what it costs to find out. Read it before interpreting any output. Ships with every copy.
+- **[`../seed/RULES.md`](../seed/RULES.md)** — the (c) knowledge itself: fifteen operational rules about how pages fail and what it costs to find out. Read it before interpreting any output. Ships with every copy.
 - **[`../CONTRIBUTING.md`](../CONTRIBUTING.md)** — where the line falls between this tool and the project using it, which is the question most changes actually turn on.
 - **[`shared-learning.md`](shared-learning.md)** — the unbuilt design for pooling (a) and (b) across deployments, and the failure mode that decides whether it can work.
 

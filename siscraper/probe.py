@@ -97,7 +97,7 @@ def probe_host(host, paths, keywords, fetcher=None, weights=None,
         if give_up_after and refused >= give_up_after:
             # Recorded on the hit, never as an attempt. `attempts` is the
             # denominator for path win rates, and a path nobody tried must
-            # not appear in it (seed/RULES.md §12).
+            # not appear in it (seed/RULES.md §13).
             best.gave_up = len(paths) - paths.index(path) - 1
             break
     return best

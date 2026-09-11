@@ -27,7 +27,7 @@ __version__ = "0.1.1"
 # invisible -- and it looks like memory working, not memory lying.
 #
 # Reachability is universal and ships in the seed; "nothing at the paths I
-# swept" is one task's finding and stays local (seed/RULES.md §13, §14).
+# swept" is one task's finding and stays local (seed/RULES.md §14, §15).
 REACHED = frozenset({"ok", "not-found", "js-shell", "redirected-to-root",
                      "empty-body", "rate-limited"})
 
