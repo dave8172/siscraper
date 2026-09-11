@@ -180,6 +180,51 @@ that would have lowered them are no longer sampled.
 The same asymmetry runs through §3: what a failure *means* determines the
 response, and status alone never carries the meaning.
 
+## 16. Precision and recall want opposite windows
+
+Finding a value and detecting that the page contradicts it are different searches, and running both at one window size gets one of them wrong.
+
+A **value** is found in a narrow window, because proximity is what makes it the right value rather than some other number on the page. A **contradiction** must be hunted across the whole document, because the competing statement is usually nowhere near the first one.
+
+Measured: a vendor page stated a 30-day holding period near the top and its real 365-day attribution window much further down. A window-sized search saw one of them and published it **with confidence** — the safety rule was "two distinct values means a human decides", and it was worth nothing because the second value was out of frame.
+
+Find in a window. Contradict across the document.
+
+## 17. The boilerplate can be the *majority* of the matches
+
+Rule 4 says boilerplate contains the word you are searching for. The sharper version: on a typical page it contains that word **more often than the content does**.
+
+Most occurrences of "cookie" on a vendor page are the consent banner and the privacy policy, not the attribution window. So it is not enough to find a match and read near it — each match has to be classified and the boilerplate ones thrown away *before* any number is read out. A "30-day" anything near a cookie notice otherwise becomes a published attribution window.
+
+Two cheap classifiers that worked: the match's window contains consent vocabulary and no domain vocabulary → discard it; the match is in a run of matches at a uniform depth → it is a nav or a policy block.
+
+## 18. The keyword says nothing when the vendor sells that thing
+
+"Recurring" appears on every line of a page belonging to a company whose product is recurring billing. The word being present carries no information about the terms.
+
+A keyword is evidence only in proportion to how surprising it is on that particular page. Where a term is also the vendor's product category, require it to co-occur with the thing you are actually asking about, or drop it as a signal.
+
+## 19. Negation, and substrings that swallow your needle
+
+Two failures from the same run, both silent, both trivially avoidable:
+
+- **"We do not offer recurring referrals"** contains the word and means the opposite of it. Any keyword extractor needs the negated forms listed, or it will confidently report the inverse.
+- **"RecurPost Affiliate Program"** contains the string "Post Affiliate Pro" and was matched as that vendor. Word boundaries are not a nicety.
+
+## 20. Value, silence, and refusal are three answers, not two
+
+An extractor that returns a value or null is lying about one of two very different states: *the page does not say* and *the page says two things*.
+
+Collapsing the second into null publishes a false claim — "not stated" about a vendor that did state it. Keep them apart, publish the silence, and route the refusal to a reader. **Refusal is the honest answer, not a failure mode to minimise.**
+
+## 21. Score the extractor on the bucket that ships, not the average
+
+An extractor measured against hand-written ground truth looked reasonable: 215 of 289 fields agreed. The number that mattered was different — of the records it was willing to publish *unsupervised*, **11% carried a figure the ground truth contradicts**.
+
+Overall accuracy averages the easy cases in with the ones that reach production. Measure the error rate inside the set that would actually ship unreviewed; that is the number that decides whether the gate can move.
+
+And keep the harness: the calibration set is a cache of page text keyed by record, so re-measuring after a pattern change costs nothing and refetches nothing.
+
 ## 15. What belongs where
 
 - A fact about **one host's reachability** → `hosts.json`. Universal; the only host knowledge that ships in the seed.
