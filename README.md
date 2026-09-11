@@ -77,7 +77,7 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 
 ## Status
 
-**v0.1.1, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 15 rules. 47 tests, no network needed (`python3 -m tests.test_core`).
+**v0.1.1, working.** Seeded from a real pass: 13 reachability records, 16 noise patterns, win-counts for 13 paths drawn from ~130 successful sweeps, and 15 rules. 51 tests, no network needed (`python3 -m tests.test_core`).
 
 **v0.1.1 came out of the first sweep large enough to hurt** — 400+ hosts for its first consumer. Four failures that a small pass never surfaces:
 

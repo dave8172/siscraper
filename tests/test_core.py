@@ -8,7 +8,7 @@ from siscraper.extract import extract, score
 from siscraper.memory import Memory
 from siscraper.probe import Hit, landed_on_root, probe_host
 from siscraper import Session
-from siscraper.fetch import RateLimiter, Result
+from siscraper.fetch import Fetcher, RateLimiter, Result
 
 def check(name, got, want):
     assert got == want, f"{name}: got {got!r}, want {want!r}"
@@ -139,6 +139,27 @@ with tempfile.TemporaryDirectory() as d:
           json.loads(f.read_text())["task"], "main/sub")
     check("and namespaces stay out of the main task's rates",
           ns.memory.recompute_paths("main").get("main"), None)
+
+print("cookie gates")
+check("a 3xx that survived redirects is named as a loop",
+      Result(url="u", status=301).diagnosis(), "redirect-loop")
+
+class _Gate:
+    """Answers 301-to-itself until it has banked `needs` cookies."""
+    def __init__(self, needs): self.needs, self.calls = needs, 0
+    def plain(self, url):
+        self.calls += 1
+        return (Result(url=url, status=200, body="<p>Earn 30%</p>")
+                if self.calls > self.needs else Result(url=url, status=301, body="Moved"))
+
+for needs, want_status in ((2, 200), (99, 301)):
+    g = _Gate(needs)
+    f = Fetcher.__new__(Fetcher)
+    f.plain = g.plain
+    r = Fetcher.get(f, "https://x.com/a", escalate=False)
+    label = "warms up through a two-cookie gate" if needs == 2 else "gives up on a real loop"
+    check(label, r.status, want_status)
+check("and the warm-up is bounded", _Gate(99).needs > 0, True)
 
 print("fetch diagnosis")
 r429 = Result(url="u", status=429, body="Just a moment...")

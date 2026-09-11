@@ -40,6 +40,9 @@ _INTERSTITIAL = re.compile(
 # A page that is only a script shell: almost no text, but real markup.
 _SHELL_TEXT_FLOOR = 400
 
+# How many extra attempts a same-URL redirect gets to bank its cookies.
+COOKIE_GATE_TRIES = 3
+
 
 @dataclass
 class Result:
@@ -221,11 +224,17 @@ class Fetcher:
             r = self._after_backoff(url, r)
         elif 300 <= r.status < 400:
             # A cookie gate, not a move: the site redirects to the same URL
-            # after setting a cookie, and may need more than one round trip to
-            # set all of them. The jar has warmed up by now, so one retry
-            # usually lands -- snov.io needs two cookies and succeeds on the
-            # second call. Exactly one retry; a real loop stays a loop.
-            r = self.plain(url)
+            # after setting a cookie, and needs one round trip per cookie it
+            # wants. Each attempt banks another, so this is a short warm-up
+            # rather than a retry storm -- snov.io wants two and lands on the
+            # third call. One retry was not enough and produced something
+            # worse than a failure: a consumer judged a submitted claim
+            # against a 67-character redirect page and called it false.
+            # Bounded hard, and a genuine loop still stays a loop.
+            for _ in range(COOKIE_GATE_TRIES):
+                r = self.plain(url)
+                if not (300 <= r.status < 400):
+                    break
         # A js-shell is a *successful* fetch -- 200, no error -- which is
         # exactly why `ok` alone must not end the ladder. The request worked;
         # the page just isn't there yet.

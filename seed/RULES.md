@@ -91,10 +91,14 @@ perfectly in any browser.
 Two things are needed, and one alone is not enough:
 
 - **A cookie jar.** `http.cookiejar` is stdlib, so this costs nothing.
-- **One retry.** A site may set more than one cookie to get through, and the
-  redirect handler can give up before collecting them all — `snov.io` needs two
-  and succeeds on the second call, with the jar warmed. Retry exactly once; a
-  genuine loop stays a loop.
+- **A short warm-up, not one retry.** A site needs one round trip per cookie
+  it wants, and each attempt banks another — `snov.io` wants two and lands on
+  the third call. One retry looked like enough and was not, intermittently,
+  which produced something worse than a failure: a consumer judged a submitted
+  figure against a 67-character redirect page and reported the claim false.
+  **A half-fixed fetch turns "I could not read this" into "you are wrong",**
+  which is the same class of error as §3 and costs more. Bound it hard; a
+  genuine loop still stays a loop and gets reported as one.
 
 Diagnose it as its own thing. `http-301` tells whoever reads the run log
 nothing; `redirect-loop` tells them to look at cookies.
