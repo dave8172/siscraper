@@ -180,8 +180,9 @@ Break any of these and the design stops working:
 2. **Log every attempt, not just the winner.** Rates need denominators; they cannot be backfilled.
 3. **Detect and refuse, never patch.** When extraction stops matching, mark the host stale and stop. A scraper that loosens its own matching produces *wrong* data instead of *no* data, and wrong data is unrecoverable downstream — nobody can tell a fabricated number from a real one afterwards.
 4. **Never a runtime dependency of a shipped artifact.** siscraper is an authoring tool. The consuming project ships its data and its own build; siscraper produces the data and disappears.
-5. **Universal facts go in the seed, contextual ones stay local.** When unsure, local — the seed is expensive to un-pollute.
-6. **The escalation ladder must not end on "the request succeeded".** A script-rendered shell is a *successful* fetch with nothing on the page.
+5. **And never the reverse: nothing consumer-specific comes back in.** The tool is written by being used, so improvements arrive from whatever project is using it — but a change earns its place by being general, not by being needed. A copy that has absorbed one consumer's specifics is no longer copyable, which is the entire premise. See [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
+6. **Universal facts go in the seed, contextual ones stay local.** When unsure, local — the seed is expensive to un-pollute.
+7. **The escalation ladder must not end on "the request succeeded".** A script-rendered shell is a *successful* fetch with nothing on the page.
 
 ---
 
@@ -210,6 +211,7 @@ trusted.
 ## Related documents
 
 - **[`../seed/RULES.md`](../seed/RULES.md)** — the (c) knowledge itself: fourteen operational rules about how pages fail and what it costs to find out. Read it before interpreting any output. Ships with every copy.
+- **[`../CONTRIBUTING.md`](../CONTRIBUTING.md)** — where the line falls between this tool and the project using it, which is the question most changes actually turn on.
 - **[`shared-learning.md`](shared-learning.md)** — the unbuilt design for pooling (a) and (b) across deployments, and the failure mode that decides whether it can work.
 
 This file explains the *system*. `RULES.md` holds the *craft*. They do not duplicate each other, and neither should grow into the other.

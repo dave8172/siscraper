@@ -62,6 +62,7 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 | `seed/RULES.md` | **read this before interpreting any output** |
 | `seed/*.seed.json` | universal reachability, noise filters, starting path order |
 | `memory/` | this repo's own working memory |
+| `CONTRIBUTING.md` | **read before opening a PR** — what belongs in the tool and what belongs in the project using it |
 | `docs/architecture.md` | **the design explained** — the three kinds of knowledge, why they are split, how a run flows through |
 | `docs/shared-learning.md` | unbuilt design for pooling learnings across deployments |
 
@@ -71,7 +72,8 @@ The seed ships knowledge about *reachability*, not about how to get around anyth
 2. **Log every attempt, not just the winner.** Rates need denominators and they cannot be backfilled.
 3. **Detect and refuse, never patch.** When extraction stops matching, mark the host stale and stop. A scraper that loosens its own matching produces wrong data instead of no data, and wrong data is unrecoverable downstream.
 4. **Never a runtime dependency of a shipped artifact.** siscraper is an authoring tool. The consuming project should ship its data and its own build; siscraper produces the data and disappears. Anything handed to someone else must not carry a dependency they cannot be given.
-5. **Universal facts go in the seed, contextual ones stay local.** When unsure, local — the seed is expensive to un-pollute.
+5. **And never the reverse: nothing consumer-specific comes back in.** A change earns its place by being true of pages, hosts or the tool — never by being needed for one project's dataset. Where a bug was *found* does not matter; what the fix is allowed to *know* does. The test is whether a scraper doing an unrelated job would still want it. Full version, and the grey areas, in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+6. **Universal facts go in the seed, contextual ones stay local.** When unsure, local — the seed is expensive to un-pollute.
 
 ## Status
 
