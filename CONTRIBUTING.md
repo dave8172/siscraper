@@ -98,6 +98,32 @@ The test for anything proposed for `seed/`: *would this still be true for
 someone scraping a completely different kind of page?* Reachability survives
 that question. A win-rate for `/affiliates` does not.
 
+### The gate runs, it is not remembered
+
+`python3 -m tests.test_scoping` enforces the part a machine can:
+
+- `seed/paths.seed.json` is `{}` — there is no "mostly empty" version of that rule
+- `seed/hosts.seed.json` records carry reachability keys and nothing else, so a
+  task outcome cannot hide in one
+- no seed file and no `argparse` default carries the first consumer's
+  vocabulary
+- no library module carries it outside a comment
+
+CI runs it on every pull request alongside the behaviour suite. **A change can
+be correct, useful, and still wrong for this repository** — that is the call
+this check makes before a reviewer has to.
+
+What it deliberately does not gate is **prose**. `seed/RULES.md` explains
+general failure modes, and explaining one needs a concrete example from some
+real domain. The line is **functional versus illustrative**: anything the tool
+reads, and anything it does by default, must be domain-free. A paragraph
+teaching you why a redirect must still count may say `/affiliates`.
+
+The vocabulary list is the first consumer's, which is not a general solution —
+you cannot enumerate a future contributor's domain. It is there because the
+recurrence worth stopping is *this* project leaking into the tool, and it has
+already happened four times in one repository.
+
 ## The rest
 
 - **Read [`docs/architecture.md`](docs/architecture.md) first.** Most rejected

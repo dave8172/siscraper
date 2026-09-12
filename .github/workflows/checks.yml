@@ -1,0 +1,24 @@
+# Runs on every push and every pull request. No network needed by either suite.
+name: checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Behaviour
+        run: python3 -m tests.test_core
+
+      # The scoping gate. A contribution can be correct, useful and still
+      # wrong for this repository, because siscraper is copied by people doing
+      # something entirely different. This is the check that says so before a
+      # reviewer has to.
+      - name: Scoping — nothing task-specific in the seed, the defaults or the code
+        run: python3 -m tests.test_scoping
