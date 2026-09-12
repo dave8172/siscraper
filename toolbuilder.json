@@ -1,0 +1,22 @@
+{
+  "_why": "Config for an external scoping gate: it checks that no consuming project's vocabulary has leaked into this toolkit. No consumer names here \u2014 this repo is public, and naming the projects that use it is a disclosure decision rather than a scoping one. The leak this guards against was a task's vocabulary, not a product's name, and the vocabulary alone catches it. tests/test_scoping.py enforces the same boundary from inside and needs no config.",
+  "code": [
+    "siscraper",
+    "seed"
+  ],
+  "prose": [
+    "README.md",
+    "CONTRIBUTING.md",
+    "docs",
+    "seed/RULES.md"
+  ],
+  "consumers": [],
+  "vocabulary": [
+    "affiliate",
+    "commission",
+    "payout",
+    "cookie window",
+    "programme terms"
+  ],
+  "zeroDeps": true
+}
