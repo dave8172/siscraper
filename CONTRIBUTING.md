@@ -70,6 +70,34 @@ never depend on siscraper at runtime. This one says siscraper must never depend
 on the consumer at all. One boundary, two directions, and both of them fail
 quietly rather than loudly.
 
+## What may enter `seed/`
+
+The scoping rule above says what belongs in the repository. This says what
+belongs in the part of it that **every clone inherits**.
+
+`seed/` carries only what is true regardless of what you were scraping:
+
+- **prose rules** — how scraping fails, in `seed/RULES.md`
+- **noise patterns** — boilerplate that is boilerplate everywhere
+- **host reachability** — *"this host serves a JS shell that headless does not
+  clear"* is true whatever you wanted from it
+
+**Task outcomes and path rates are not universal and do not go here.** They
+live in the consuming project's `memory/`, which is exactly what that directory
+is for.
+
+It is worth saying plainly because the mistake is a reasonable one, and was
+made here: a project measured its path win-rates over thousands of requests,
+and a measured order genuinely does beat a guessed one — so the numbers were
+copied into the seed as a gift to the next person. Two things wrong with it.
+Those rates are **meaningless to anyone scraping something else**, and they are
+**one consumer's work handed to every other**, including whoever that consumer
+is competing with. `seed/paths.seed.json` ships `{}`.
+
+The test for anything proposed for `seed/`: *would this still be true for
+someone scraping a completely different kind of page?* Reachability survives
+that question. A win-rate for `/affiliates` does not.
+
 ## The rest
 
 - **Read [`docs/architecture.md`](docs/architecture.md) first.** Most rejected

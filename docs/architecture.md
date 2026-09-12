@@ -57,7 +57,9 @@ That pass swept thirteen guessed URL paths per host. Here is what actually won, 
 
 **This is the self-improving part, and it requires no intelligence at all.** It is arithmetic over a log. The same mechanism should eventually replace the hand-set early-exit threshold: given outcomes, you can ask at what score a page actually turned out usable, rather than guessing 25.
 
-**It depends entirely on the run log recording every attempt, not just the winner.** Logging only what worked makes win *counts* computable and hit *rates* impossible — the denominator is gone, and it cannot be backfilled because the requests are spent. The pass that produced this tool made exactly that mistake, which is why `seed/paths.seed.json` ships `won` counts with `tried: 0`.
+**It depends entirely on the run log recording every attempt, not just the winner.** Logging only what worked makes win *counts* computable and hit *rates* impossible — the denominator is gone, and it cannot be backfilled because the requests are spent. The pass that produced this tool made exactly that mistake, and the fix was to log every attempt rather than every success.
+
+`seed/paths.seed.json` is **empty, deliberately.** It once carried one project's measured affiliate-path rates, on the reasoning that a measured order beats a guessed one — which is true, and still the wrong place to put it. Those numbers are contextual: meaningless to a job-board scraper, and one consumer's work handed to every other. A clone starts with no path ordering and earns its own on the first pass.
 
 ### (c) Prose rules — what counting can never discover
 
