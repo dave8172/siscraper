@@ -113,7 +113,7 @@ Left alone this silently blocks nearly every fetch, and it looks like politeness
 
 Sweeping thirteen paths costs twelve extra cheap requests. On the pass that produced this tool, **nine of eighty-six records came from hosts a single guessed URL had already written off as dead** — live all along, at a different path.
 
-Measured, `/affiliates` and `/partners` won most often, and `/partners` was ranked fifth by guesswork. **Order paths by measurement, never by intuition** — that is what `paths.json` is for.
+On that pass the path ranked fifth by guesswork turned out to be among the top two by measurement. **Order paths by measurement, never by intuition** — that is what `paths.json` is for, and it is local because the ranking is only true for the thing you were looking for.
 
 ## 9. A structurally perfect hit can be semantically the wrong page
 

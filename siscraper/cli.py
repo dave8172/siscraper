@@ -117,10 +117,14 @@ def main(argv=None):
     p = sub.add_parser("known"); p.add_argument("host"); p.set_defaults(fn=cmd_known)
     p = sub.add_parser("fetch"); p.add_argument("url"); p.add_argument("--no-escalate", action="store_true"); p.set_defaults(fn=cmd_fetch)
     p = sub.add_parser("read"); p.add_argument("url"); p.add_argument("--task", default="default")
-    p.add_argument("--want", default=r"\d+ ?%,commission,cookie,payout,minimum")
+    # No default: there is no universal answer to "what are you looking for",
+    # and guessing one consumer's task is how a general tool stops being one.
+    p.add_argument("--want", required=True,
+                   help="comma-separated regexes/substrings the page must contain, e.g. 'price,\\d+ ?%'")
     p.add_argument("--lines", type=int, default=30); p.set_defaults(fn=cmd_read)
     p = sub.add_parser("probe"); p.add_argument("hosts", nargs="*"); p.add_argument("--task", default="default")
-    p.add_argument("--keywords", default="affiliate,commission,cookie,payout")
+    p.add_argument("--keywords", required=True,
+                   help="comma-separated terms that make a page a candidate, e.g. 'pricing,plan,tier'")
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--stop-at", type=int, default=None)
     p.add_argument("--escalate", action="store_true"); p.set_defaults(fn=cmd_probe)

@@ -92,13 +92,24 @@ Each is now a rule in `seed/RULES.md` (§2, §3, §12, §14) as well as code, be
 
 Verified end to end against five hosts whose correct URLs were known by hand; all five matched, and a sixth was skipped from seed memory without spending a request.
 
-**The seed's path order is now measured, not guessed.** It shipped with `won` counts and `tried: 0`, because the pass that produced it logged only winners. The first large consumer run replaced that with **9,090 logged attempts and 201 wins across 23 paths** — the first real denominator the seed has ever had. Three things changed as a result:
+**The path order is measured — and it stays with whoever measured it.** The first
+large consumer run logged **9,090 attempts across 23 paths**, the first real
+denominator the mechanism ever had. What that changed is worth knowing; the
+numbers themselves are that project's, and `seed/paths.seed.json` ships `{}`:
 
-- **`/affiliate` beats `/affiliates`** (11.5% vs 7.7%), and the guessed order had them the other way round.
-- **Five paths won nothing in ~390 tries each** and were dropped: `/affiliate-programme`, `/affiliate-programs`, `/affiliate/join`, `/partner-programme`, `/partner-programs`. They cost roughly 1,950 requests and returned zero. Keeping them "just in case" is exactly what measuring is for.
-- **`/affiliate-marketing` wins 1.5% and should be read with suspicion.** Almost every page it finds is the vendor's own *blog post explaining what affiliate marketing is* — high keyword density, no terms. It is the cleanest demonstration of §8 there is: scoring finds pages, it does not read them, and a path can win the score while losing every judgement.
+- **The guessed order had the top two paths the wrong way round.** Ordering a
+  sweep by measurement finds the page in fewer requests. Ordering it by
+  intuition reliably does not.
+- **Five paths won nothing at all**, across roughly 390 tries each — about
+  1,950 requests for zero records. Keeping a path "just in case" is exactly
+  what measuring is for.
+- **The most obvious-sounding path was among the worst.** Nearly every page it
+  found was the vendor's own blog post explaining what the topic *is* — high
+  keyword density, no terms. The cleanest demonstration of §8 there is:
+  scoring finds pages, it does not read them, and a path can win the score
+  while losing every judgement.
 
-Local measurements still supersede the seed the moment any consumer runs its own sweep.
+A clone starts with no path order and earns its own on the first pass. See `CONTRIBUTING.md` for what may enter `seed/` and why this may not.
 
 **Exploration:** `Session(explore=0.1)` retries a tenth of the hosts memory says to skip, deterministic per host and day. Without it a scraper that trusts its memory can only ever lose hosts — a site that starts allowing traffic again is never noticed.
 
